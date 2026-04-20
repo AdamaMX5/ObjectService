@@ -1,7 +1,6 @@
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@apollo/server/express4');
 const { ApolloServerPluginDrainHttpServer } = require('@apollo/server/plugin/drainHttpServer');
-const cors = require('cors');
 const express = require('express');
 const { typeDefs } = require('./schema');
 const { resolvers } = require('./resolvers');
@@ -16,14 +15,8 @@ async function setupGraphQL(app, httpServer) {
 
   await server.start();
 
-  const corsOptions = {
-    origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : '*',
-    credentials: true,
-  };
-
   app.use(
     '/graphql',
-    cors(corsOptions),
     express.json(),
     expressMiddleware(server, {
       context: async ({ req }) => {

@@ -1,6 +1,5 @@
 const http = require('http');
 const express = require('express');
-const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const { connectDatabase } = require('./config/database');
@@ -15,10 +14,6 @@ async function startApp() {
   const httpServer = http.createServer(app);
 
   app.use(helmet({ contentSecurityPolicy: false }));
-  app.use(cors({
-    origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : '*',
-    credentials: true,
-  }));
   app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
   app.use(express.json({ limit: '10mb' }));
 
