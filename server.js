@@ -56,7 +56,11 @@ app.get('/', (req, res) => {
       'PUT /objects/:id',
       'DELETE /objects/:id',
       'GET /objects/app/:appId',
-      'GET /objects/type/:type'
+      'GET /objects/type/:type',
+      'GET /objects/:collection',
+      'GET /objects/:collection/:id',
+      'PUT /objects/:collection/:id',
+      'DELETE /objects/:collection/:id'
     ]
   });
 });
@@ -127,6 +131,23 @@ app.get('/objects/:id', async (req, res) => {
   }
 });
 
+// Get object by collection and ID (VirtualOffice compatibility)
+app.get('/objects/:collection/:id', async (req, res) => {
+  try {
+    const object = await ObjectModel.findOne({
+      _id: req.params.id,
+      type: req.params.collection,
+      isPublic: true
+    });
+    if (!object) {
+      return res.status(404).json({ error: 'Object not found' });
+    }
+    res.json(object);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Create object - REQUIRES API KEY
 app.post('/objects', apiKeyMiddleware, async (req, res) => {
   try {
@@ -177,10 +198,56 @@ app.put('/objects/:id', apiKeyMiddleware, async (req, res) => {
   }
 });
 
+// Update object by collection and ID (VirtualOffice compatibility)
+app.put('/objects/:collection/:id', apiKeyMiddleware, async (req, res) => {
+  try {
+    const { data, updatedBy, tags, metadata } = req.body;
+    
+    const object = await ObjectModel.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        type: req.params.collection
+      },
+      {
+        data,
+        updatedBy,
+        tags,
+        metadata,
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
+    
+    if (!object) {
+      return res.status(404).json({ error: 'Object not found' });
+    }
+    
+    res.json(object);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Delete object - REQUIRES API KEY
 app.delete('/objects/:id', apiKeyMiddleware, async (req, res) => {
   try {
     const object = await ObjectModel.findByIdAndDelete(req.params.id);
+    if (!object) {
+      return res.status(404).json({ error: 'Object not found' });
+    }
+    res.json({ message: 'Object deleted', id: req.params.id });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete object by collection and ID (VirtualOffice compatibility)
+app.delete('/objects/:collection/:id', apiKeyMiddleware, async (req, res) => {
+  try {
+    const object = await ObjectModel.findOneAndDelete({
+      _id: req.params.id,
+      type: req.params.collection
+    });
     if (!object) {
       return res.status(404).json({ error: 'Object not found' });
     }
