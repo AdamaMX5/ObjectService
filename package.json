@@ -7,7 +7,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "start": "node server.js",
+    "start": "node -e \"require("./src/app").startApp()\"",
     "dev": "nodemon server.js"
   },
   "dependencies": {
