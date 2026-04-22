@@ -60,6 +60,7 @@ app.get('/', (req, res) => {
       'GET /objects/:collection',
       'GET /objects/:collection/:id',
       'PUT /objects/:collection/:id',
+      'PATCH /objects/:collection/:id',
       'DELETE /objects/:collection/:id'
     ]
   });
@@ -252,6 +253,43 @@ app.delete('/objects/:collection/:id', apiKeyMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Object not found' });
     }
     res.json({ message: 'Object deleted', id: req.params.id });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// Partial update by collection and ID (VirtualOffice PATCH support with merge)
+app.patch("/objects/:collection/:id", apiKeyMiddleware, async (req, res) => {
+  try {
+    const { data, merge, updatedBy, tags, metadata } = req.body;
+    
+    const existing = await ObjectModel.findOne({
+      _id: req.params.id,
+      type: req.params.collection
+    });
+    if (!existing) {
+      return res.status(404).json({ error: "Object not found" });
+    }
+    
+    const mergedData = merge ? { ...existing.data, ...data } : data;
+    
+    const object = await ObjectModel.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        type: req.params.collection
+      },
+      {
+        data: mergedData,
+        updatedBy,
+        tags,
+        metadata,
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
+    
+    res.json(object);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
